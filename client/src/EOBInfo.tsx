@@ -15,7 +15,7 @@ const columns: GridColDef[] = [
     headerName: "Created At",
     type: "date",
     width: 200,
-    valueFormatter: params=>new Date(params?.value).toLocaleString(),
+    valueFormatter: (params) => new Date(params?.value).toLocaleString(),
     sortComparator: gridDateComparator,
   },
   { field: "facilityName", headerName: "Facility Name", width: 300 },
@@ -75,18 +75,27 @@ const bundleToGridRowsProp = (
 export function EOBInfo() {
   const accessToken = useContext(AccessTokenContext);
   const [rows, setRows] = useState<GridRowsProp>([]);
+  const [errorMessage, setErrorMessage] = useState("");
   useEffect(() => {
     if (accessToken) {
       const flexpaApi = new FlexpaApi(accessToken);
-      flexpaApi.searchEOB().then((data) => {
-        const entries = (data as Bundle).entry;
-        setRows(bundleToGridRowsProp(data as Bundle<ExplanationOfBenefit>));
-      });
+      flexpaApi
+        .searchEOB()
+        .then((data) => {
+          const entries = (data as Bundle).entry;
+          setRows(bundleToGridRowsProp(data as Bundle<ExplanationOfBenefit>));
+        })
+        .catch((err) => {
+          setErrorMessage(err);
+        });
     } else {
+      setErrorMessage("");
       setRows([]);
     }
   }, [accessToken]);
-  return rows?.length > 0 ? (
+  return errorMessage ? (
+    <span>{`An error ocurred while loading: ${errorMessage}`}</span>
+  ) : rows?.length > 0 ? (
     <DataGrid
       style={{ width: "100%", backgroundColor: "white" }}
       rows={rows}

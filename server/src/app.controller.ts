@@ -5,6 +5,7 @@ import {
   Headers,
   Param,
   Post,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AppService } from './app.service';
 
@@ -22,6 +23,11 @@ export class AppController {
     @Headers('Authorization') accessToken: string,
     @Param('resource') resource: string,
   ) {
+    if (!accessToken) {
+      return new UnauthorizedException(
+        'No access token found in authorization header',
+      );
+    }
     return this.appService.searchEOB(accessToken, resource);
   }
 
@@ -31,6 +37,11 @@ export class AppController {
     @Param('resource') resource: string,
     @Param('id') id,
   ) {
+    if (!accessToken) {
+      return new UnauthorizedException(
+        'No access token found in authorization header',
+      );
+    }
     return this.appService.searchEOB(accessToken, resource, id);
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Bundle, Resource } from 'fhir/r4';
 
@@ -48,6 +48,9 @@ export class AppService {
       },
     });
     const body = await response.json();
+    if(body.resourceType ==='OperationOutcome' && body.issue){
+      throw new BadRequestException(body.issue[0].details.text);
+    }
     return body;
   }
 }

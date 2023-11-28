@@ -20,5 +20,5 @@ REACT_APP_BACKEND_BASE_URL=http://localhost:9000
 ```
 - `cd ./server && npm run start:dev` in a terminal to start up the nest backend
 - `cd ./client && npm run start` in a different terminal to start up the client
-- Login and authorize using one of the providers and [login information provided by flexpa](https://www.flexpa.com/docs/getting-started/test-mode)
-- Marvel at the EOB data pulled from the Flexpa API
+- Login and authorize using one of the providers (I used Aetna and Humana the most and am displaying information that they seemed to provide more than others. Anthem didn't like me searching which I discovered too late to work out) and [login information provided by flexpa](https://www.flexpa.com/docs/getting-started/test-mode)
+- Marvel at the EOB data pulled from the Flexpa Search API
