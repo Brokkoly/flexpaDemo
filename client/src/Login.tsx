@@ -17,6 +17,11 @@ export function LoginProvider(props: {
   });
   const [accessTokenInfo, setAccessTokenInfo] = useState<TokenResponse>();
 
+  /**
+   * Exchanges a public token with the backend for an access token then sets the
+   * state with that token
+   * @param publicToken a public token from FlexpaLink
+   */
   const getFlexpaAccessToken = async (publicToken: string) => {
     fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/token`, {
       method: "POST",
@@ -45,6 +50,8 @@ export function LoginProvider(props: {
     }
   }, [status]);
 
+  //Render the login/logout button as a bar at the top of the page
+  //and provide the access token context to the children
   return (
     <>
       <div

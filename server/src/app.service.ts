@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Bundle, ExplanationOfBenefit, Resource } from 'fhir/r4';
-import { request } from 'http';
-import { json } from 'stream/consumers';
+import { Bundle, Resource } from 'fhir/r4';
 
 @Injectable()
 export class AppService {

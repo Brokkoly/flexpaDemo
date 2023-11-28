@@ -23,6 +23,11 @@ const columns: GridColDef[] = [
   { field: "coverage", headerName: "Coverage Name", width: 300 },
 ];
 
+/**
+ * Pulls data from an ExplanationOfBenefit record and returns it
+ * @param eob a fhir ExplanationOfBenefit record
+ * @returns Formatted data for displaying
+ */
 function createData(eob?: ExplanationOfBenefit) {
   let insurance = eob?.insurance[0];
   let coverage = "None";
@@ -41,6 +46,11 @@ function createData(eob?: ExplanationOfBenefit) {
   };
 }
 
+/**
+ * Create the rows for the data grid out of a bundle that may include an OutcomeResponse
+ * @param bundle A bundle of EOB data to parse into row data
+ * @returns GridRowProps for the data grid
+ */
 const bundleToGridRowsProp = (
   bundle: Bundle<ExplanationOfBenefit>
 ): GridRowsProp => {
@@ -57,20 +67,22 @@ const bundleToGridRowsProp = (
   return gridRowProps;
 };
 
+/**
+ * Displays Explanation of Benefit info from the backend automatically when
+ * the context is updated with an access token
+ * @returns A datagrid of Explanation Of Benefit info
+ */
 export function EOBInfo() {
   const accessToken = useContext(AccessTokenContext);
-  const [eobData, setEobData] = useState<Bundle<ExplanationOfBenefit>>();
   const [rows, setRows] = useState<GridRowsProp>([]);
   useEffect(() => {
     if (accessToken) {
       const flexpaApi = new FlexpaApi(accessToken);
       flexpaApi.searchEOB().then((data) => {
         const entries = (data as Bundle).entry;
-        setEobData(data as Bundle<ExplanationOfBenefit>);
         setRows(bundleToGridRowsProp(data as Bundle<ExplanationOfBenefit>));
       });
     } else {
-      setEobData(undefined);
       setRows([]);
     }
   }, [accessToken]);
