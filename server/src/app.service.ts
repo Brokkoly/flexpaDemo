@@ -1,6 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Bundle, Resource } from 'fhir/r4';
+import { jwtDecode } from 'jwt-decode';
 
 @Injectable()
 export class AppService {
@@ -38,7 +43,15 @@ export class AppService {
     resource: string,
     id?: string,
   ): Promise<Bundle<Resource> | Resource> {
-    const url = `https://api.flexpa.com/fhir/${resource}${id ? `/${id}` : ''}`;
+    const patientId = jwtDecode(accessToken).sub.split('/')[1] ?? undefined;
+    if (!patientId) {
+      throw new UnauthorizedException(
+        'The access token did not provide a valid patient id',
+      );
+    }
+    const url = `https://api.flexpa.com/fhir/${resource}${
+      id ? `/${id}` : ''
+    }?patient=${patientId}`;
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -48,7 +61,7 @@ export class AppService {
       },
     });
     const body = await response.json();
-    if(body.resourceType ==='OperationOutcome' && body.issue){
+    if (body.resourceType === 'OperationOutcome' && body.issue) {
       throw new BadRequestException(body.issue[0].details.text);
     }
     return body;
