@@ -7,9 +7,6 @@ import { json } from 'stream/consumers';
 @Injectable()
 export class AppService {
   constructor(private readonly configService: ConfigService) {}
-  getHello(): string {
-    return 'Hello World!';
-  }
 
   /**
    * Exchanges a FlexLink public token for an access token
@@ -28,7 +25,6 @@ export class AppService {
       }),
     });
     const body = await response.json();
-    console.log({ body });
     return body;
   }
 
@@ -44,20 +40,16 @@ export class AppService {
     resource: string,
     id?: string,
   ): Promise<Bundle<Resource> | Resource> {
-
-    const url = `https://api.flexpa.com/fhir/${resource}${id?`/${id}`:''}`
-    console.log({url})
-    const response = await fetch(
-      url,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: accessToken.startsWith('Bearer')?accessToken:`Bearer ${accessToken}`,
-        },
+    const url = `https://api.flexpa.com/fhir/${resource}${id ? `/${id}` : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: accessToken.startsWith('Bearer')
+          ? accessToken
+          : `Bearer ${accessToken}`,
       },
-    );
+    });
     const body = await response.json();
-    console.log({body})
     return body;
   }
 }

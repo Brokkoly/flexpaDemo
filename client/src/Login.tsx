@@ -1,6 +1,6 @@
 import { ReactElement, createContext, useEffect, useState } from "react";
 import { TokenResponse } from "./flexpaApi";
-import { Button } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useScript } from "usehooks-ts";
 
 export const AccessTokenContext = createContext("");
@@ -11,14 +11,14 @@ export function LoginProvider(props: {
   existingAccessTokenInfo?: TokenResponse;
   children: ReactElement;
 }) {
+  //Load the flexpa script
   const status = useScript("https://js.flexpa.com/v1/", {
     removeOnUnmount: false,
   });
   const [accessTokenInfo, setAccessTokenInfo] = useState<TokenResponse>();
 
   const getFlexpaAccessToken = async (publicToken: string) => {
-    //TODO: make this an environment-based variable
-    fetch("http://localhost:9000/token", {
+    fetch(`${process.env.REACT_APP_BACKEND_BASE_URL}/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -29,54 +29,59 @@ export function LoginProvider(props: {
     })
       .then((response) => response.json())
       .then((data) => {
-        console.log({ data });
         setAccessTokenInfo(data);
       });
   };
 
-  //TODO: put this into a provider
-  const flexpaLinkCreate = async () => {
-    console.log("inFlexpaLinkCreate");
-    FlexpaLink.create({
-      //TODO: make this an environment-based variable
-      publishableKey: "pk_test_b9nO_Y1yytW5g57G1bTFNG0CDpuDW-v3r5onhNG6pp8",
-      endpoint: "7c308678-b82f-4787-b961-9e62f24d4120", //TODO: remove after testing
-      onSuccess: (publicToken: string) => {
-        console.log("success");
-        getFlexpaAccessToken(publicToken).then(() => {
-
-          console.log("loaded");
-        });
-      },
-    });
-  };
-
+  //Wait to load until the script has loaded
   useEffect(() => {
-    console.log("in useEffect");
     if (typeof FlexpaLink !== "undefined") {
-      console.log("calling flexpaLinkCreate");
-      flexpaLinkCreate();
+      FlexpaLink.create({
+        publishableKey: process.env.REACT_APP_PUBLISHABLE_KEY,
+        onSuccess: (publicToken: string) => {
+          getFlexpaAccessToken(publicToken);
+        },
+      });
     }
   }, [status]);
+
   return (
     <>
       <div
         style={{
           display: "flex",
           flexDirection: "row",
-          height: "45px",
+          height: "auto",
+          padding: "5px",
           backgroundColor: "grey",
+          alignContent: "center",
           width: "100%",
           alignSelf: "flex-start",
         }}
       >
         {accessTokenInfo ? (
-          <Button style={{ backgroundColor: "blue", color: "white" }}
-          onClick={()=>{
-            setAccessTokenInfo(undefined);
-          }}>
-            Logout
-          </Button>
+          <>
+            <Box
+              component="img"
+              style={{
+                height: "48px",
+                aspectRatio: "1",
+                alignSelf: "center",
+                marginRight: "5px",
+                borderRadius: "24px",
+              }}
+              //TODO: Fallback to something if this image doesn't exist (Low Priority)
+              src={`https://cdn.flexpa.com/logos/${accessTokenInfo.endpoint.id}`}
+            />
+            <Button
+              style={{ backgroundColor: "blue", color: "white" }}
+              onClick={() => {
+                setAccessTokenInfo(undefined);
+              }}
+            >
+              Logout
+            </Button>
+          </>
         ) : (
           <Button
             style={{

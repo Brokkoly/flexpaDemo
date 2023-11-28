@@ -16,8 +16,7 @@ export class FlexpaApi {
         headers: this.authHeaders,
       }
     );
-    const body = response.json();
-    console.log({ body });
+    const body = await response.json();
     return body;
   }
 }

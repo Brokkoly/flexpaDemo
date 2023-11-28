@@ -1,112 +1,90 @@
-import {
-  IconButton,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from "@mui/material";
-import { Bundle, ExplanationOfBenefit, OperationOutcome } from "fhir/r4";
-import React, { useContext, useEffect, useState } from "react";
-import { testEOBJSON } from "./testData";
+import { Bundle, ExplanationOfBenefit } from "fhir/r4";
+import { useContext, useEffect, useState } from "react";
 import { AccessTokenContext } from "./Login";
 import { FlexpaApi } from "./flexpaApi";
+import {
+  DataGrid,
+  GridColDef,
+  GridRowsProp,
+  gridDateComparator,
+} from "@mui/x-data-grid";
 
-// export type EOBDisplayProps
-// function EOBDisplay(){
-
-// }
-
-export interface EOBListProps {
-  data?: Bundle;
-}
+const columns: GridColDef[] = [
+  {
+    field: "createdAt",
+    headerName: "Created At",
+    type: "date",
+    width: 200,
+    valueFormatter: params=>new Date(params?.value).toLocaleString(),
+    sortComparator: gridDateComparator,
+  },
+  { field: "facilityName", headerName: "Facility Name", width: 300 },
+  { field: "provider", headerName: "Provider Name", width: 150 },
+  { field: "coverage", headerName: "Coverage Name", width: 300 },
+];
 
 function createData(eob?: ExplanationOfBenefit) {
   let insurance = eob?.insurance[0];
   let coverage = "None";
   if (insurance) {
-    coverage = insurance?.coverage?.display ?? "Unknown Value Was Null";
+    coverage =
+      insurance?.coverage?.display ??
+      eob?.insurer?.display ??
+      "Unknown Value Was Null";
   }
   return {
-    provider: eob?.provider?.display ?? "Unknown Value Was Null",
-    facilityName: eob?.facility?.display ?? "Unknown Value Was Null",
+    id: eob?.id,
+    provider: eob?.provider?.display ?? "Unknown",
+    facilityName: eob?.facility?.display ?? "Unknown",
     coverage: coverage,
-    created: eob?.created ? new Date(eob?.created).toLocaleString() : "Unknown",
+    createdAt: new Date(eob?.created ?? ""),
   };
 }
 
-export function EOBListTable({
-  data = testEOBJSON as Bundle<ExplanationOfBenefit>,
-}: EOBListProps) {
-  const rows = data.entry ?? [];
-  return (
-    <TableContainer component={Paper}>
-      <Table aria-label="collapsible table">
-        <TableHead>
-          <TableRow>
-            <TableCell>Created At</TableCell>
-            <TableCell>Facility</TableCell>
-            <TableCell>Provider</TableCell>
-            <TableCell>Insurer</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.flatMap((row) => {
-            if (row?.resource?.resourceType !== "ExplanationOfBenefit") {
-              return [];
-            }
-            return [<EOBListRow
-              key={row.resource?.id}
-              row={createData(row.resource)}
-            />];
-          })}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-}
-
-export function EOBListRow(props: { row: ReturnType<typeof createData> }) {
-  const { row } = props;
-  const [open, setOpen] = React.useState(false);
-  return (
-    <React.Fragment>
-      <TableRow sx={{ "& > *": { borderBottom: "unset" } }}>
-        {/* <TableCell>
-          <IconButton
-            aria-label="expand row"
-            size="small"
-            onClick={() => setOpen(!open)}
-          >
-            {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-          </IconButton>
-        </TableCell> */}
-        <TableCell component="th" scope="row">
-          {row.created}
-        </TableCell>
-        <TableCell>{row.facilityName}</TableCell>
-        <TableCell>{row.provider}</TableCell>
-        <TableCell>{row.coverage}</TableCell>
-      </TableRow>
-    </React.Fragment>
-  );
-}
+const bundleToGridRowsProp = (
+  bundle: Bundle<ExplanationOfBenefit>
+): GridRowsProp => {
+  const entries = bundle.entry;
+  const gridRowProps = entries?.flatMap((entry) => {
+    if (entry?.resource?.resourceType !== "ExplanationOfBenefit") {
+      return [];
+    }
+    return [createData(entry.resource as ExplanationOfBenefit)];
+  });
+  if (!gridRowProps) {
+    return [];
+  }
+  return gridRowProps;
+};
 
 export function EOBInfo() {
   const accessToken = useContext(AccessTokenContext);
   const [eobData, setEobData] = useState<Bundle<ExplanationOfBenefit>>();
+  const [rows, setRows] = useState<GridRowsProp>([]);
   useEffect(() => {
     if (accessToken) {
       const flexpaApi = new FlexpaApi(accessToken);
       flexpaApi.searchEOB().then((data) => {
+        const entries = (data as Bundle).entry;
         setEobData(data as Bundle<ExplanationOfBenefit>);
+        setRows(bundleToGridRowsProp(data as Bundle<ExplanationOfBenefit>));
       });
+    } else {
+      setEobData(undefined);
+      setRows([]);
     }
   }, [accessToken]);
-  return eobData ? (
-    <EOBListTable data={eobData} />
+  return rows?.length > 0 ? (
+    <DataGrid
+      style={{ width: "100%", backgroundColor: "white" }}
+      rows={rows}
+      columns={columns}
+      initialState={{
+        sorting: {
+          sortModel: [{ field: "createdAt", sort: "desc" }],
+        },
+      }}
+    />
   ) : (
     <span>No data to show yet</span>
   );
